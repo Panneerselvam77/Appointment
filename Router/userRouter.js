@@ -1,13 +1,9 @@
 import express from "express";
-// import { jwtDecode } from "jwt-decode";
-// import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import { isAuthenticated } from "../Authentication/Auth.js";
-
 import { User } from "../Models/User.js";
-// import { Otp } from "../Models/OTP.js";
 import { Doctor } from "../Models/DoctorModel.js";
 
 dotenv.config();
@@ -88,22 +84,90 @@ router.post("/get-user-info-by-id", isAuthenticated, async (req, res) => {
 });
 
 /* Apply Doctor */
-router.post("/apply-doctor", async (req, res) => {
+router.post("/apply-doctor-account", isAuthenticated, async (req, res) => {
   try {
+    //
     const newdoctor = new Doctor({ ...req.body, status: "pending" });
     await newdoctor.save();
+    console.log("What New: ", newdoctor);
+    //
     const adminUser = await User.findOne({ isAdmin: true });
-    const unseenNotification = adminUser.unseenNotification;
-    unseenNotification.push({
-      type: "New Doctor request",
-      message: `${newdoctor.firstName} ${newdoctor.lastName} has applied for a Doctor accont`,
-      data: {
-        doctorId: newdoctor._id,
-        name: newdoctor.firstName + " " + newdoctor.lastName,
-      },
-      onClickPath: "/admin/doctors",
+    //
+    if (adminUser) {
+      const unseenNotification = adminUser.unseenNotification;
+      unseenNotification.push({
+        type: "New Doctor request",
+        message: `${newdoctor.firstName} ${newdoctor.lastName} has applied for a Doctor accont`,
+        data: {
+          doctorId: newdoctor._id,
+          name: newdoctor.firstName + " " + newdoctor.lastName,
+        },
+        onClickPath: "/admin/doctors",
+      });
+      //
+      await User.findByIdAndUpdate(adminUser._id, { unseenNotification });
+      res.status(200).json({
+        success: true,
+        message: "Doctor account applied successfully",
+        Newdoctor: newdoctor,
+      });
+    } else {
+      res.status(401).json({
+        message: "Doctor account not applied successfully",
+        success: false,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error, success: false });
+  }
+});
+
+// Marking All notification
+router.post(
+  "/mark-all-notification-as-seen",
+  isAuthenticated,
+  async (req, res) => {
+    try {
+      const user = await User.findOne({ _id: req.body.userId });
+      const unseenNotification = user.unseenNotification;
+      const seenNotification = user.seenNotification;
+      seenNotification.push(...unseenNotification);
+      user.unseenNotification = [];
+      user.seenNotification = seenNotification;
+      const updatedUser = await user.save();
+      updatedUser.password = undefined;
+      res.status(200).json({
+        success: true,
+        message: "All notifications marked as seen",
+        data: updatedUser,
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({
+        message: "Internal Server Error",
+        error: error,
+        success: false,
+      });
+    }
+  }
+);
+
+// Delete Notification
+router.post("/delete-all-notification", async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.body.userId });
+    user.seenNotification = [];
+    user.unseenNotification = [];
+    const updateUser = await user.save();
+    updateUser.password = undefined;
+    res.status(200).json({
+      success: true,
+      message: "All notification Deleted successfully",
+      data: updateUser,
     });
-    await User.findByIdAndUpdate(adminUser._id, { unseenNotification });
   } catch (error) {
     console.log(error);
     res
