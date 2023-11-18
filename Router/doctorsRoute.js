@@ -1,7 +1,7 @@
 import express from "express";
-import { isAuthenticated } from "../Authentication/Auth";
-import { Doctor } from "../Models/DoctorModel";
-import { Appointment } from "../Models/appointmentModel";
+import { isAuthenticated } from "../Authentication/Auth.js";
+import { Doctor } from "../Models/DoctorModel.js";
+import { Appointment } from "../Models/appointmentModel.js";
 import { User } from "../Models/User.js";
 
 const router = express.Router();

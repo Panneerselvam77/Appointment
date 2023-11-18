@@ -102,7 +102,7 @@ router.post("/apply-doctor-account", isAuthenticated, async (req, res) => {
           doctorId: newdoctor._id,
           name: newdoctor.firstName + " " + newdoctor.lastName,
         },
-        onClickPath: "/admin/doctors",
+        onClickPath: "/admin/doctorslist",
       });
       //
       await User.findByIdAndUpdate(adminUser._id, { unseenNotification });
@@ -173,6 +173,25 @@ router.post("/delete-all-notification", async (req, res) => {
     res
       .status(500)
       .json({ message: "Internal Server Error", error: error, success: false });
+  }
+});
+
+/* Get All Approved Doctors List  */
+router.get("/get-all-approved-doctors", isAuthenticated, async (req, res) => {
+  try {
+    const doctors = await Doctor.find({});
+    res.status(200).json({
+      message: "Doctors fetched successfully",
+      success: true,
+      data: doctors,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Error applying doctor account",
+      success: false,
+      error,
+    });
   }
 });
 
