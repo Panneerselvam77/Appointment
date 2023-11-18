@@ -5,6 +5,8 @@ import jwt from "jsonwebtoken";
 import { isAuthenticated } from "../Authentication/Auth.js";
 import { User } from "../Models/User.js";
 import { Doctor } from "../Models/DoctorModel.js";
+import { Appointment } from "../Models/appointmentModel.js";
+import moment from "moment";
 
 dotenv.config();
 const router = express.Router();
@@ -195,6 +197,93 @@ router.get("/get-all-approved-doctors", isAuthenticated, async (req, res) => {
   }
 });
 
+/* Checking Availability to Book Appointment */
+router.post("/check-booking-avilability", isAuthenticated, async (req, res) => {
+  try {
+    const date = moment(req.body.date, "DD-MM-YYYY").toISOString();
+    const fromTime = moment(req.body.time, "HH:mm")
+      .subtract(1, "hour")
+      .toISOString();
+    const toTime = moment(req.body.time, "HH:mm").add(1, "hour").toISOString();
+    const doctorId = req.body.doctorId;
+    const appointments = await Appointment.find({
+      doctorId,
+      date,
+      time: { $gte: fromTime, $lte: toTime },
+    });
+    if (appointments.length > 0) {
+      return res.status(200).json({
+        message: "Appointments not available",
+        success: false,
+      });
+    } else {
+      return res.status(200).json({
+        message: "Appointments available",
+        success: true,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Error booking appointment",
+      success: false,
+      error,
+    });
+  }
+});
+
+/* Booking Appointment */
+router.post("/book-appointment", isAuthenticated, async (req, res) => {
+  try {
+    req.body.status = "pending";
+    req.body.date = moment(req.body.date, "DD-MM-YYYY").toISOString();
+    req.body.time = moment(req.body.time, "HH:mm").toISOString();
+    const newAppointment = new Appointment(req.body);
+    await newAppointment.save();
+    //pushing notification to doctor based on his userid
+    const user = await User.findOne({ _id: req.body.doctorInfo.userId });
+    user.unseenNotification.push({
+      type: "new-appointment-request",
+      message: `A new appointment request has been made by ${req.body.userInfo.name}`,
+      onClickPath: "/doctor/appointments",
+    });
+    await user.save();
+    res.status(200).json({
+      message: "Appointment booked successfully",
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Error in booking appointment",
+      success: false,
+      error,
+    });
+  }
+});
+
+router.get(
+  "/get-appointments-by-user-id",
+  isAuthenticated,
+  async (req, res) => {
+    try {
+      const appointments = await Appointment.find({ userId: req.body.userId });
+      res.status(200).send({
+        message: "Appointments fetched successfully",
+        success: true,
+        data: appointments,
+      });
+      console.log(appointments);
+    } catch (error) {
+      console.log(error);
+      res.status(500).send({
+        message: "Error fetching appointments",
+        success: false,
+        error,
+      });
+    }
+  }
+);
 /* Once Verified Generate OTP */
 // router.post("/otp-generating", async (req, res) => {
 //   //  Finding User
