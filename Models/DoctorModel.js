@@ -38,8 +38,12 @@ const doctorSchema = mongoose.Schema(
       type: Number,
       required: true,
     },
-    timings: {
-      type: Array,
+    fromTime: {
+      type: Number,
+      required: true,
+    },
+    toTime: {
+      type: Number,
       required: true,
     },
     status: {

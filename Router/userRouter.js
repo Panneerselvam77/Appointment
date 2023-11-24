@@ -181,7 +181,7 @@ router.post("/delete-all-notification", async (req, res) => {
 /* Get All Approved Doctors List  */
 router.get("/get-all-approved-doctors", isAuthenticated, async (req, res) => {
   try {
-    const doctors = await Doctor.find({});
+    const doctors = await Doctor.find({ status: "approved" });
     res.status(200).json({
       message: "Doctors fetched successfully",
       success: true,
@@ -201,15 +201,11 @@ router.get("/get-all-approved-doctors", isAuthenticated, async (req, res) => {
 router.post("/check-booking-avilability", isAuthenticated, async (req, res) => {
   try {
     const date = moment(req.body.date, "DD-MM-YYYY").toISOString();
-    const fromTime = moment(req.body.time, "HH:mm")
-      .subtract(1, "hour")
-      .toISOString();
-    const toTime = moment(req.body.time, "HH:mm").add(1, "hour").toISOString();
+
     const doctorId = req.body.doctorId;
     const appointments = await Appointment.find({
       doctorId,
       date,
-      time: { $gte: fromTime, $lte: toTime },
     });
     if (appointments.length > 0) {
       return res.status(200).json({
@@ -237,7 +233,6 @@ router.post("/book-appointment", isAuthenticated, async (req, res) => {
   try {
     req.body.status = "pending";
     req.body.date = moment(req.body.date, "DD-MM-YYYY").toISOString();
-    req.body.time = moment(req.body.time, "HH:mm").toISOString();
     const newAppointment = new Appointment(req.body);
     await newAppointment.save();
     //pushing notification to doctor based on his userid

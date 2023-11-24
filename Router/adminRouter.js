@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get("/get-all-doctors", isAuthenticated, async (req, res) => {
   try {
-    const doctors = await Doctor.find({});
+    const doctors = await Doctor.find({ status: "approved" });
     res.status(200).json({
       message: "Doctors fetched successfully",
       success: true,
