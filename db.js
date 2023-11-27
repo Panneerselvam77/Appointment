@@ -12,3 +12,9 @@ export default function dbConnection() {
     console.log("Error connecting DB---", error);
   }
 }
+
+/* 
+DB_CONNECTION=mongodb+srv://user:panneer123@cluster0.bc622a4.mongodb.net/My-Health-Partner
+PORT=8070
+SECKRET_KEY=secrectKey
+ */
