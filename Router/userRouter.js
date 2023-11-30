@@ -91,7 +91,7 @@ router.post("/apply-doctor-account", isAuthenticated, async (req, res) => {
     //
     const newdoctor = new Doctor({ ...req.body, status: "pending" });
     await newdoctor.save();
-    console.log("What New: ", newdoctor);
+    // console.log("What New: ", newdoctor);
     //
     const adminUser = await User.findOne({ isAdmin: true });
     //
@@ -268,7 +268,6 @@ router.get(
         success: true,
         data: appointments,
       });
-      console.log(appointments);
     } catch (error) {
       console.log(error);
       res.status(500).send({
